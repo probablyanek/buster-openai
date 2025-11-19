@@ -2,8 +2,8 @@ import aes from 'crypto-js/aes';
 import sha256 from 'crypto-js/sha256';
 import utf8 from 'crypto-js/enc-utf8';
 
-import {initStorage} from 'storage/init';
-import {isStorageReady} from 'storage/storage';
+import { initStorage } from 'storage/init';
+import { isStorageReady } from 'storage/storage';
 import storage from 'storage/storage';
 import {
   showNotification,
@@ -35,9 +35,10 @@ import {
   captchaGoogleSpeechApiLangCodes,
   captchaIbmSpeechApiLangCodes,
   captchaMicrosoftSpeechApiLangCodes,
+  captchaOpenaiSpeechApiLangCodes,
   captchaWitSpeechApiLangCodes
 } from 'utils/data';
-import {targetEnv, clientAppVersion, mv3} from 'utils/config';
+import { targetEnv, clientAppVersion, mv3 } from 'utils/config';
 
 let nativePort;
 
@@ -56,10 +57,10 @@ function getFrameClientPos(index) {
   const targetWindow = window.frames[index];
   for (const frame of document.querySelectorAll('iframe')) {
     if (frame.contentWindow === targetWindow) {
-      let {left: x, top: y} = frame.getBoundingClientRect();
+      let { left: x, top: y } = frame.getBoundingClientRect();
       const scale = window.devicePixelRatio;
 
-      return {x: x * scale, y: y * scale, currentIndex};
+      return { x: x * scale, y: y * scale, currentIndex };
     }
   }
 }
@@ -92,7 +93,7 @@ async function getFramePos(tabId, frameId, frameIndex) {
     y += data.y;
   }
 
-  return {x, y};
+  return { x, y };
 }
 
 function initResetCaptcha() {
@@ -101,7 +102,7 @@ function initResetCaptcha() {
     script.onload = function (ev) {
       ev.target.remove();
       document.dispatchEvent(
-        new CustomEvent('___resetCaptcha', {detail: challengeUrl})
+        new CustomEvent('___resetCaptcha', { detail: challengeUrl })
       );
     };
     script.src = chrome.runtime.getURL('/src/scripts/reset.js');
@@ -126,11 +127,11 @@ function initResetCaptcha() {
 }
 
 async function resetCaptcha(tabId, frameId, challengeUrl) {
-  frameId = (await browser.webNavigation.getFrame({tabId, frameId}))
+  frameId = (await browser.webNavigation.getFrame({ tabId, frameId }))
     .parentFrameId;
 
-  if (!(await scriptsAllowed({tabId, frameId}))) {
-    await showNotification({messageId: 'error_scriptsNotAllowed'});
+  if (!(await scriptsAllowed({ tabId, frameId }))) {
+    await showNotification({ messageId: 'error_scriptsNotAllowed' });
     return;
   }
 
@@ -147,7 +148,7 @@ async function resetCaptcha(tabId, frameId, challengeUrl) {
       id: 'resetCaptcha',
       challengeUrl
     },
-    {frameId}
+    { frameId }
   );
 }
 
@@ -155,12 +156,12 @@ function challengeRequestCallback(details) {
   const url = new URL(details.url);
   if (url.searchParams.get('hl') !== 'en') {
     url.searchParams.set('hl', 'en');
-    return {redirectUrl: url.toString()};
+    return { redirectUrl: url.toString() };
   }
 }
 
 async function setChallengeLocale() {
-  const {loadEnglishChallenge, simulateUserInput} = await storage.get([
+  const { loadEnglishChallenge, simulateUserInput } = await storage.get([
     'loadEnglishChallenge',
     'simulateUserInput'
   ]);
@@ -177,7 +178,7 @@ async function setChallengeLocale() {
               redirect: {
                 transform: {
                   queryTransform: {
-                    addOrReplaceParams: [{key: 'hl', value: 'en'}]
+                    addOrReplaceParams: [{ key: 'hl', value: 'en' }]
                   }
                 }
               }
@@ -256,7 +257,7 @@ function removeRequestHeaders(details) {
     }
   }
 
-  return {requestHeaders: headers};
+  return { requestHeaders: headers };
 }
 
 async function addBackgroundRequestListener() {
@@ -271,8 +272,8 @@ async function addBackgroundRequestListener() {
           action: {
             type: 'modifyHeaders',
             requestHeaders: [
-              {operation: 'remove', header: 'Origin'},
-              {operation: 'remove', header: 'Referer'}
+              { operation: 'remove', header: 'Origin' },
+              { operation: 'remove', header: 'Referer' }
             ]
           },
           condition: {
@@ -293,7 +294,8 @@ async function addBackgroundRequestListener() {
               'speech.googleapis.com',
               'iam.cloud.ibm.com',
               'speech-to-text.watson.cloud.ibm.com',
-              'stt.speech.microsoft.com'
+              'stt.speech.microsoft.com',
+              'api.openai.com'
             ],
             initiatorDomains: [getExtensionDomain()],
             resourceTypes: ['websocket', 'xmlhttprequest']
@@ -316,7 +318,8 @@ async function addBackgroundRequestListener() {
         'https://speech.googleapis.com/*',
         '*://*.speech-to-text.watson.cloud.ibm.com/*',
         'https://iam.cloud.ibm.com/*',
-        'https://*.stt.speech.microsoft.com/*'
+        'https://*.stt.speech.microsoft.com/*',
+        'https://api.openai.com/*'
       ];
 
       const extraInfo = ['blocking', 'requestHeaders'];
@@ -341,7 +344,7 @@ async function addBackgroundRequestListener() {
   }
 }
 
-async function removeBackgroundRequestListener({ruleIds = null} = {}) {
+async function removeBackgroundRequestListener({ ruleIds = null } = {}) {
   if (mv3) {
     await browser.declarativeNetRequest.updateSessionRules({
       removeRuleIds: ruleIds
@@ -360,7 +363,7 @@ async function removeBackgroundRequestListener({ruleIds = null} = {}) {
 let secrets;
 async function loadSecrets() {
   if (mv3) {
-    const {secrets: data} = await storage.get('secrets', {area: 'session'});
+    const { secrets: data } = await storage.get('secrets', { area: 'session' });
     if (data) {
       return data;
     }
@@ -377,20 +380,20 @@ async function loadSecrets() {
 
     const key = sha256(
       (await (await fetch('/src/background/script.js')).text()) +
-        (await (await fetch('/src/base/script.js')).text())
+      (await (await fetch('/src/base/script.js')).text())
     ).toString();
 
     data = JSON.parse(aes.decrypt(ciphertext, key).toString(utf8));
   } catch (err) {
-    const {speechService} = await storage.get('speechService');
+    const { speechService } = await storage.get('speechService');
     if (speechService === 'witSpeechApiDemo') {
-      await storage.set({speechService: 'witSpeechApi'});
+      await storage.set({ speechService: 'witSpeechApi' });
     }
 
     data = {};
   } finally {
     if (mv3) {
-      await storage.set({secrets: data}, {area: 'session'});
+      await storage.set({ secrets: data }, { area: 'session' });
     } else {
       secrets = data;
     }
@@ -412,7 +415,7 @@ async function getWitSpeechApiKey(speechService, language) {
       return apiKey;
     }
   } else {
-    const {witSpeechApiKeys: apiKeys} = await storage.get('witSpeechApiKeys');
+    const { witSpeechApiKeys: apiKeys } = await storage.get('witSpeechApiKeys');
     return apiKeys[language];
   }
 }
@@ -425,7 +428,7 @@ async function getWitSpeechApiResult(apiKey, audioContent) {
     headers: {
       Authorization: 'Bearer ' + apiKey
     },
-    body: new Blob([audioContent], {type: 'audio/wav'}),
+    body: new Blob([audioContent], { type: 'audio/wav' }),
     credentials: 'omit'
   });
 
@@ -524,7 +527,7 @@ async function getIbmSpeechApiResult(apiUrl, apiKey, audioContent, model) {
       throw new Error(`API response: ${rsp.status}, ${await rsp.text()}`);
     }
 
-    const {access_token: accessToken} = await rsp.json();
+    const { access_token: accessToken } = await rsp.json();
     const wsUrl = apiUrl.replace(/^https(.*)/, 'wss$1');
 
     const ws = new WebSocket(
@@ -537,7 +540,7 @@ async function getIbmSpeechApiResult(apiUrl, apiKey, audioContent, model) {
         reject(new Error('API timeout'));
       }, 30000); // 30 seconds
 
-      function response({result, error} = {}) {
+      function response({ result, error } = {}) {
         self.clearTimeout(timeoutId);
 
         if (error) {
@@ -558,7 +561,7 @@ async function getIbmSpeechApiResult(apiUrl, apiKey, audioContent, model) {
 
         ws.send(new Blob([audioContent]));
 
-        ws.send(JSON.stringify({action: 'stop'}));
+        ws.send(JSON.stringify({ action: 'stop' }));
       };
 
       ws.onmessage = function (ev) {
@@ -567,18 +570,18 @@ async function getIbmSpeechApiResult(apiUrl, apiKey, audioContent, model) {
         if (results) {
           ws.close();
 
-          response({result: results[0]?.alternatives[0].transcript.trim()});
+          response({ result: results[0]?.alternatives[0].transcript.trim() });
         }
       };
 
       ws.onclose = function (ev) {
         if (ev.code !== 1000) {
-          response({error: new Error(`API response: ${ev.code}`)});
+          response({ error: new Error(`API response: ${ev.code}`) });
         }
       };
 
       ws.onerror = function (ev) {
-        response({error: new Error(`API response: ${ev.code}`)});
+        response({ error: new Error(`API response: ${ev.code}`) });
       };
     });
   } else {
@@ -592,7 +595,7 @@ async function getIbmSpeechApiResult(apiUrl, apiKey, audioContent, model) {
           // Invalid value, see description above
           Priority: '1'
         },
-        body: new Blob([audioContent], {type: 'audio/wav'}),
+        body: new Blob([audioContent], { type: 'audio/wav' }),
         credentials: 'omit'
       }
     );
@@ -622,7 +625,7 @@ async function getMicrosoftSpeechApiResult(
         'Ocp-Apim-Subscription-Key': apiKey,
         'Content-type': 'audio/wav; codec=audio/pcm; samplerate=16000'
       },
-      body: new Blob([audioContent], {type: 'audio/wav'}),
+      body: new Blob([audioContent], { type: 'audio/wav' }),
       credentials: 'omit'
     }
   );
@@ -637,12 +640,44 @@ async function getMicrosoftSpeechApiResult(
   }
 }
 
+
+
+async function getOpenaiSpeechApiResult(apiKey, audioContent, language) {
+  const formData = new FormData();
+  formData.append('file', new Blob([audioContent], { type: 'audio/wav' }), 'audio.wav');
+  formData.append('model', 'gpt-4o-transcribe');
+  // OpenAI supports ISO-639-1 codes, but we can pass the language if needed.
+  // However, the prompt says "Transcribe audio into whatever language the audio is in."
+  // But we can also specify language to improve accuracy if known.
+  if (language) {
+    formData.append('language', language);
+  }
+
+  const rsp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: formData,
+    credentials: 'omit'
+  });
+
+  if (rsp.status !== 200) {
+    throw new Error(`API response: ${rsp.status}, ${await rsp.text()}`);
+  }
+
+  const result = await rsp.json();
+  if (result && result.text) {
+    return result.text.trim();
+  }
+}
+
 async function transcribeAudio(audioUrl, lang) {
   const audioBuffer = await (
-    await fetch(audioUrl, {credentials: 'omit'})
+    await fetch(audioUrl, { credentials: 'omit' })
   ).arrayBuffer();
 
-  const audioOptions = {trimStart: 1.5, trimEnd: 1.5};
+  const audioOptions = { trimStart: 1.5, trimEnd: 1.5 };
 
   let audioContent;
   if (mv3 && !['firefox', 'safari'].includes(targetEnv)) {
@@ -652,7 +687,7 @@ async function transcribeAudio(audioUrl, lang) {
       justification: 'process audio'
     });
 
-    const {audioString} = await sendOffscreenMessage({
+    const { audioString } = await sendOffscreenMessage({
       id: 'processAudio',
       audioString: arrayBufferToBase64(audioBuffer),
       audioOptions
@@ -667,7 +702,7 @@ async function transcribeAudio(audioUrl, lang) {
 
   let solution;
 
-  const {speechService, tryEnglishSpeechModel} = await storage.get([
+  const { speechService, tryEnglishSpeechModel } = await storage.get([
     'speechService',
     'tryEnglishSpeechModel'
   ]);
@@ -678,7 +713,7 @@ async function transcribeAudio(audioUrl, lang) {
     const apiKey = await getWitSpeechApiKey(speechService, language);
 
     if (!apiKey) {
-      showNotification({messageId: 'error_missingApiKey'});
+      showNotification({ messageId: 'error_missingApiKey' });
       return;
     }
 
@@ -696,7 +731,7 @@ async function transcribeAudio(audioUrl, lang) {
       const apiKey = await getWitSpeechApiKey(speechService, 'english');
 
       if (!apiKey) {
-        showNotification({messageId: 'error_missingApiKey'});
+        showNotification({ messageId: 'error_missingApiKey' });
         return;
       }
 
@@ -711,11 +746,11 @@ async function transcribeAudio(audioUrl, lang) {
       solution = result.text;
     }
   } else if (speechService === 'googleSpeechApi') {
-    const {googleSpeechApiKey: apiKey} =
+    const { googleSpeechApiKey: apiKey } =
       await storage.get('googleSpeechApiKey');
 
     if (!apiKey) {
-      showNotification({messageId: 'error_missingApiKey'});
+      showNotification({ messageId: 'error_missingApiKey' });
       return;
     }
 
@@ -728,15 +763,15 @@ async function transcribeAudio(audioUrl, lang) {
       tryEnglishSpeechModel
     );
   } else if (speechService === 'ibmSpeechApi') {
-    const {ibmSpeechApiUrl: apiUrl, ibmSpeechApiKey: apiKey} =
+    const { ibmSpeechApiUrl: apiUrl, ibmSpeechApiKey: apiKey } =
       await storage.get(['ibmSpeechApiUrl', 'ibmSpeechApiKey']);
 
     if (!apiUrl) {
-      showNotification({messageId: 'error_missingApiUrl'});
+      showNotification({ messageId: 'error_missingApiUrl' });
       return;
     }
     if (!apiKey) {
-      showNotification({messageId: 'error_missingApiKey'});
+      showNotification({ messageId: 'error_missingApiKey' });
       return;
     }
 
@@ -757,11 +792,11 @@ async function transcribeAudio(audioUrl, lang) {
       );
     }
   } else if (speechService === 'microsoftSpeechApi') {
-    const {microsoftSpeechApiLoc: apiLocaction, microsoftSpeechApiKey: apiKey} =
+    const { microsoftSpeechApiLoc: apiLocaction, microsoftSpeechApiKey: apiKey } =
       await storage.get(['microsoftSpeechApiLoc', 'microsoftSpeechApiKey']);
 
     if (!apiKey) {
-      showNotification({messageId: 'error_missingApiKey'});
+      showNotification({ messageId: 'error_missingApiKey' });
       return;
     }
 
@@ -785,6 +820,17 @@ async function transcribeAudio(audioUrl, lang) {
         'en-US'
       );
     }
+  } else if (speechService === 'openaiSpeechApi') {
+    const { openaiSpeechApiKey: apiKey } = await storage.get('openaiSpeechApiKey');
+
+    if (!apiKey) {
+      showNotification({ messageId: 'error_missingApiKey' });
+      return;
+    }
+
+    const language = captchaOpenaiSpeechApiLangCodes[lang] || 'en';
+
+    solution = await getOpenaiSpeechApiResult(apiKey, audioContent, language);
   }
 
   if (!solution) {
@@ -794,7 +840,7 @@ async function transcribeAudio(audioUrl, lang) {
         timeout: 20000
       });
     } else {
-      showNotification({messageId: 'error_captchaNotSolved', timeout: 6000});
+      showNotification({ messageId: 'error_captchaNotSolved', timeout: 6000 });
     }
   } else {
     return solution;
@@ -809,7 +855,7 @@ async function processMessage(request, sender) {
   }
 
   if (targetEnv === 'samsung') {
-    if (await isValidTab({tab: sender.tab})) {
+    if (await isValidTab({ tab: sender.tab })) {
       // Samsung Internet 13: runtime.onMessage provides wrong tab index.
       sender.tab = await browser.tabs.get(sender.tab.id);
     }
@@ -830,7 +876,7 @@ async function processMessage(request, sender) {
     try {
       return await transcribeAudio(request.audioUrl, request.lang);
     } finally {
-      await removeBackgroundRequestListener({ruleIds});
+      await removeBackgroundRequestListener({ ruleIds });
     }
   } else if (request.id === 'resetCaptcha') {
     await resetCaptcha(sender.tab.id, sender.frameId, request.challengeUrl);
@@ -911,10 +957,10 @@ function onMessage(request, sender, sendResponse) {
 }
 
 async function onClientAppInstall() {
-  await storage.set({simulateUserInput: true});
+  await storage.set({ simulateUserInput: true });
 
   await browser.runtime
-    .sendMessage({id: 'reloadOptionsPage'})
+    .sendMessage({ id: 'reloadOptionsPage' })
     .catch(() => null);
 }
 
@@ -928,12 +974,12 @@ async function onActionButtonClick(tab) {
 
 async function onInstall(details) {
   if (['install', 'update'].includes(details.reason)) {
-    await setup({event: 'install'});
+    await setup({ event: 'install' });
   }
 }
 
 async function onStartup() {
-  await setup({event: 'startup'});
+  await setup({ event: 'startup' });
 }
 
 function addActionListener() {
@@ -956,8 +1002,8 @@ function addStartupListener() {
   browser.runtime.onStartup.addListener(onStartup);
 }
 
-async function setup({event = ''} = {}) {
-  const startup = await getStartupState({event});
+async function setup({ event = '' } = {}) {
+  const startup = await getStartupState({ event });
 
   if (startup.setupInstance) {
     await runOnce('setupInstance', async () => {
@@ -988,8 +1034,8 @@ async function setup({event = ''} = {}) {
 
   if (startup.setupSession) {
     await runOnce('setupSession', async () => {
-      if (mv3 && !(await isStorageReady({area: 'session'}))) {
-        await initStorage({area: 'session', silent: true});
+      if (mv3 && !(await isStorageReady({ area: 'session' }))) {
+        await initStorage({ area: 'session', silent: true });
       }
 
       await setChallengeLocale();
