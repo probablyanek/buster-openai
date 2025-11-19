@@ -1,6 +1,7 @@
 const optionKeys = [
   'speechService',
   'googleSpeechApiKey',
+  'openaiSpeechApiKey',
   'ibmSpeechApiUrl',
   'ibmSpeechApiKey',
   'microsoftSpeechApiLoc',
@@ -348,6 +349,80 @@ const captchaWitSpeechApiLangCodes = {
   zu: '' // Zulu
 };
 
+// https://platform.openai.com/docs/guides/speech-to-text/supported-languages
+const captchaOpenaiSpeechApiLangCodes = {
+  ar: 'ar', // Arabic
+  af: 'af', // Afrikaans
+  am: 'am', // Amharic
+  hy: 'hy', // Armenian
+  az: 'az', // Azerbaijani
+  eu: 'eu', // Basque
+  bn: 'bn', // Bengali
+  bg: 'bg', // Bulgarian
+  ca: 'ca', // Catalan
+  'zh-HK': 'zh', // Chinese (Hong Kong)
+  'zh-CN': 'zh', // Chinese (Simplified)
+  'zh-TW': 'zh', // Chinese (Traditional)
+  hr: 'hr', // Croatian
+  cs: 'cs', // Czech
+  da: 'da', // Danish
+  nl: 'nl', // Dutch
+  'en-GB': 'en', // English (UK)
+  en: 'en', // English (US)
+  et: 'et', // Estonian
+  fil: 'tl', // Filipino
+  fi: 'fi', // Finnish
+  fr: 'fr', // French
+  'fr-CA': 'fr', // French (Canadian)
+  gl: 'gl', // Galician
+  ka: 'ka', // Georgian
+  de: 'de', // German
+  'de-AT': 'de', // German (Austria)
+  'de-CH': 'de', // German (Switzerland)
+  el: 'el', // Greek
+  gu: 'gu', // Gujarati
+  iw: 'he', // Hebrew
+  hi: 'hi', // Hindi
+  hu: 'hu', // Hungarian
+  is: 'is', // Icelandic
+  id: 'id', // Indonesian
+  it: 'it', // Italian
+  ja: 'ja', // Japanese
+  kn: 'kn', // Kannada
+  ko: 'ko', // Korean
+  lo: 'lo', // Laothian
+  lv: 'lv', // Latvian
+  lt: 'lt', // Lithuanian
+  ms: 'ms', // Malay
+  ml: 'ml', // Malayalam
+  mr: 'mr', // Marathi
+  mn: 'mn', // Mongolian
+  no: 'no', // Norwegian
+  fa: 'fa', // Persian
+  pl: 'pl', // Polish
+  pt: 'pt', // Portuguese
+  'pt-BR': 'pt', // Portuguese (Brazil)
+  'pt-PT': 'pt', // Portuguese (Portugal)
+  ro: 'ro', // Romanian
+  ru: 'ru', // Russian
+  sr: 'sr', // Serbian
+  si: 'si', // Sinhalese
+  sk: 'sk', // Slovak
+  sl: 'sl', // Slovenian
+  es: 'es', // Spanish
+  'es-419': 'es', // Spanish (Latin America)
+  sw: 'sw', // Swahili
+  sv: 'sv', // Swedish
+  ta: 'ta', // Tamil
+  te: 'te', // Telugu
+  th: 'th', // Thai
+  tr: 'tr', // Turkish
+  uk: 'uk', // Ukrainian
+  ur: 'ur', // Urdu
+  vi: 'vi', // Vietnamese
+  zu: 'zu' // Zulu
+};
+
 // https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions#speech-service
 const microsoftSpeechApiRegions = [
   'southafricanorth',
@@ -390,6 +465,7 @@ export {
   captchaGoogleSpeechApiLangCodes,
   captchaIbmSpeechApiLangCodes,
   captchaMicrosoftSpeechApiLangCodes,
+  captchaOpenaiSpeechApiLangCodes,
   captchaWitSpeechApiLangCodes,
   microsoftSpeechApiRegions
 };
